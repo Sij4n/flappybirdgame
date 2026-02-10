@@ -43,6 +43,22 @@ clock = pygame.time.Clock()
 font = pygame.font.Font(None, 48)
 small_font = pygame.font.Font(None, 32)
 
+# High score tracking
+HIGH_SCORE_FILE = "highscore.txt"
+
+def load_high_score():
+    """Load high score from file."""
+    try:
+        with open(HIGH_SCORE_FILE, "r") as f:
+            return int(f.read())
+    except (FileNotFoundError, ValueError):
+        return 0
+
+def save_high_score(score):
+    """Save high score to file."""
+    with open(HIGH_SCORE_FILE, "w") as f:
+        f.write(str(score))
+
 class Bird:
     """Represents the player bird in the game."""
     
@@ -119,7 +135,7 @@ def draw_text(surface, text, font, color, x, y, center=True):
         rect.topleft = (x, y)
     surface.blit(text_surface, rect)
 
-def game_loop(screen):
+def game_loop(screen, high_score):
     """Main game loop."""
     bird = Bird()
     pipes = [Pipe(WIDTH + 200)]
@@ -139,7 +155,7 @@ def game_loop(screen):
                     if not game_over:
                         bird.flap()
                     else:
-                        return  # Restart game
+                        return max(score, high_score)  # Return updated high score
         
         if not game_over:
             # Update bird
@@ -182,6 +198,9 @@ def game_loop(screen):
         # Draw score
         draw_text(screen, str(score), font, WHITE, WIDTH // 2, 50)
         
+        # Draw high score
+        draw_text(screen, f"Best: {high_score}", small_font, WHITE, WIDTH // 2, 100)
+        
         # Draw game over
         if game_over:
             draw_text(screen, "GAME OVER", font, WHITE, WIDTH // 2, HEIGHT // 2 - 50)
@@ -192,5 +211,7 @@ def game_loop(screen):
 
 # Main game loop
 if __name__ == "__main__":
+    high_score = load_high_score()
     while True:
-        game_loop(screen)
+        high_score = game_loop(screen, high_score)
+        save_high_score(high_score)
