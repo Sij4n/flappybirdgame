@@ -62,6 +62,9 @@ def save_high_score(score):
 class Bird:
     """Represents the player bird in the game."""
     
+    MIN_Y = 0
+    MAX_Y = HEIGHT
+    
     def __init__(self):
         self.x = BIRD_START_X
         self.y = HEIGHT // 2
@@ -87,6 +90,10 @@ class Bird:
         """Return the bird's collision rectangle."""
         return pygame.Rect(self.x - self.radius, self.y - self.radius, 
                           self.radius * 2, self.radius * 2)
+    
+    def is_out_of_bounds(self):
+        """Check if bird is out of game bounds."""
+        return self.y + self.radius > self.MAX_Y or self.y - self.radius < self.MIN_Y
         return pygame.Rect(self.x - self.radius, self.y - self.radius, 
                           self.radius * 2, self.radius * 2)
 
@@ -162,7 +169,7 @@ def game_loop(screen, high_score):
             bird.update()
             
             # Check if bird hit ground or ceiling
-            if bird.y + bird.radius > HEIGHT or bird.y - bird.radius < 0:
+            if bird.is_out_of_bounds():
                 game_over = True
             
             # Update pipes
