@@ -24,6 +24,7 @@ PIPE_WIDTH = 70
 PIPE_GAP = 200
 PIPE_SPEED = 3
 PIPE_SPAWN_DISTANCE = 250
+MIN_PIPE_GAP = 150  # Minimum gap between pipes for difficulty scaling
 
 # Bird settings
 BIRD_RADIUS = 20
@@ -58,6 +59,12 @@ def save_high_score(score):
     """Save high score to file."""
     with open(HIGH_SCORE_FILE, "w") as f:
         f.write(str(score))
+
+def get_pipe_gap(score):
+    """Calculate pipe gap based on current score (increases difficulty)."""
+    # Gap decreases by 2 pixels every 10 points, minimum 150
+    gap = max(PIPE_GAP - (score // 10) * 2, MIN_PIPE_GAP)
+    return gap
 
 class Bird:
     """Represents the player bird in the game."""
@@ -100,9 +107,10 @@ class Bird:
 class Pipe:
     """Represents a pipe obstacle in the game."""
     
-    def __init__(self, x):
+    def __init__(self, x, gap_size=PIPE_GAP):
         self.x = x
-        self.height = random.randint(150, HEIGHT - 150 - PIPE_GAP)
+        self.gap_size = gap_size
+        self.height = random.randint(150, HEIGHT - 150 - gap_size)
         self.passed = False
     
     def update(self):
@@ -115,17 +123,17 @@ class Pipe:
         pygame.draw.rect(surface, GREEN, (self.x, 0, PIPE_WIDTH, self.height))
         pygame.draw.rect(surface, BLACK, (self.x, 0, PIPE_WIDTH, self.height), 3)
         # Bottom pipe
-        pygame.draw.rect(surface, GREEN, (self.x, self.height + PIPE_GAP, 
-                                        PIPE_WIDTH, HEIGHT - self.height - PIPE_GAP))
-        pygame.draw.rect(surface, BLACK, (self.x, self.height + PIPE_GAP, 
-                                        PIPE_WIDTH, HEIGHT - self.height - PIPE_GAP), 3)
+        pygame.draw.rect(surface, GREEN, (self.x, self.height + self.gap_size, 
+                                        PIPE_WIDTH, HEIGHT - self.height - self.gap_size))
+        pygame.draw.rect(surface, BLACK, (self.x, self.height + self.gap_size, 
+                                        PIPE_WIDTH, HEIGHT - self.height - self.gap_size), 3)
     
     def collides(self, bird):
         """Check if pipe collides with bird."""
         bird_rect = bird.get_rect()
         top_pipe = pygame.Rect(self.x, 0, PIPE_WIDTH, self.height)
-        bottom_pipe = pygame.Rect(self.x, self.height + PIPE_GAP, 
-                                  PIPE_WIDTH, HEIGHT - self.height - PIPE_GAP)
+        bottom_pipe = pygame.Rect(self.x, self.height + self.gap_size, 
+                                  PIPE_WIDTH, HEIGHT - self.height - self.gap_size)
         return bird_rect.colliderect(top_pipe) or bird_rect.colliderect(bottom_pipe)
     
     def off_screen(self):
@@ -188,9 +196,10 @@ def game_loop(screen, high_score):
             # Remove off-screen pipes
             pipes = [pipe for pipe in pipes if not pipe.off_screen()]
             
-            # Add new pipes
+            # Add new pipes with difficulty scaling
             if len(pipes) == 0 or pipes[-1].x < WIDTH - PIPE_SPAWN_DISTANCE:
-                pipes.append(Pipe(WIDTH))
+                gap = get_pipe_gap(score)
+                pipes.append(Pipe(WIDTH, gap))
         
         # Draw everything
         screen.fill(BLUE)
